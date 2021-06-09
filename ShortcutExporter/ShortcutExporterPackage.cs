@@ -65,6 +65,12 @@ namespace MadsKristensen.ShortcutExporter
                     return "2012";
                 case "12.0":
                     return "2013";
+                case "14.0":
+                    return "2015";
+                case "15.0":
+                    return "2017";
+                case "16.0":
+                    return "2019";
             }
 
             return "2013";
@@ -83,6 +89,30 @@ namespace MadsKristensen.ShortcutExporter
             }
         }
 
+        private static void Print(XmlWriter writer, EnvDTE.Command command, object[] bindings)
+        {
+            foreach (object binding in bindings)
+            {
+                var shortcut = binding.ToString();
+                var scopeIndex = shortcut.IndexOf("::");
+                string scope = "";
+                if (scopeIndex >= 0)
+                {
+                    scope = shortcut.Substring(0, scopeIndex);
+                    shortcut = shortcut.Substring(scopeIndex + 2);
+                }
+
+                writer.WriteStartElement("command");
+                if (scope.Length > 0)
+                {
+                    writer.WriteAttributeString("scope", scope);
+                }
+                writer.WriteAttributeString("shortcut", shortcut);
+                writer.WriteAttributeString("name", command.Name);
+                writer.WriteEndElement();
+            }
+        }
+
         private void WriteCommands(XmlWriter writer)
         {
             List<Command> commands = GetCommands();
@@ -93,15 +123,7 @@ namespace MadsKristensen.ShortcutExporter
 
                 if (bindings != null && bindings.Length > 0)
                 {
-                    var shortcuts = GetBindings(bindings);
-
-                    foreach (string shortcut in shortcuts)
-                    {
-                        writer.WriteStartElement("command");
-                        writer.WriteAttributeString("shortcut", shortcut);
-                        writer.WriteAttributeString("name", command.Name);
-                        writer.WriteEndElement();
-                    }
+                    Print(writer, command, bindings);
                 }
             }
         }
@@ -117,16 +139,6 @@ namespace MadsKristensen.ShortcutExporter
             }
 
             return commands;
-        }
-
-        private static IEnumerable<string> GetBindings(IEnumerable<object> bindings)
-        {
-            var result = bindings.Select(binding => binding.ToString().IndexOf("::") >= 0
-                ? binding.ToString().Substring(binding.ToString().IndexOf("::") + 2)
-                : binding.ToString()).Distinct();
-
-
-            return result;
         }
     }
 }
